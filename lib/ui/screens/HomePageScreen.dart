@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 import './home/Page1.dart';
 import './home/Page2.dart';
-import './home/Page3.dart';
+import './home/Chat.dart';
 
 // Connexion
 import 'connexion/connexion.dart';
@@ -30,14 +30,14 @@ class _HomePageScreenState extends State<HomePageScreen> {
     Connexion(),
     Page1(),
     Page2(),
-    Page3(),
+    ChatPage(),
   ];
 
   final List<String> _titles = <String>[
     'Connexion', // Titre pour la page de login
     'Scan QR',
     'Nouvelle commande',
-    'Status commandes',
+    'Chat',
   ];
 
   @override
@@ -61,8 +61,8 @@ class _HomePageScreenState extends State<HomePageScreen> {
                   label: 'Commander',
                 ),
                 BottomNavigationBarItem(
-                  icon: Icon(Icons.list_alt),
-                  label: 'Status',
+                  icon: Icon(Icons.chat),
+                  label: 'Chat',
                 ),
               ],
             )

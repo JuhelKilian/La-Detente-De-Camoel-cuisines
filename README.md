@@ -1,4 +1,4 @@
-# la_getente_de_camoel_cuisines
+# la_detente_de_camoel_cuisines
 
 L'application Flutter des cuisines
 

@@ -37,6 +37,7 @@ dependencies:
   http: ^1.3.0
   shared_preferences: ^2.5.1
   rename: ^3.0.2
+  flutter_chat_ui: ^1.6.15
 
 dev_dependencies:
   flutter_test:
