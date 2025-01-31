@@ -70,12 +70,14 @@ class _GestionDechetsState extends State<GestionDechets> {
     setState(() {
       String dateKey = "${selectedDate!.year}-${selectedDate!.month}-${selectedDate!.day}";
       int newQuantity = int.tryParse(quantityController.text) ?? 0;
-      wasteRecords[dateKey] = (wasteRecords[dateKey] ?? 0) + newQuantity;
+      // Remplace la quantité existante par la nouvelle
+      wasteRecords[dateKey] = newQuantity;
       totalWaste = wasteRecords.values.fold(0, (prev, element) => prev + element);
       quantityController.clear();
     });
     _saveWasteData();
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -145,6 +147,8 @@ class _GestionDechetsState extends State<GestionDechets> {
       itemBuilder: (context, index) {
         DateTime date = datesGrid[index];
         bool isSelected = selectedDate != null && date.isAtSameMomentAs(selectedDate!);
+        String dateKey = "${date.year}-${date.month}-${date.day}";
+        int wasteKg = wasteRecords[dateKey] ?? 0;
 
         return GestureDetector(
           onTap: () {
@@ -158,14 +162,19 @@ class _GestionDechetsState extends State<GestionDechets> {
               color: isSelected ? Colors.blue.shade100 : Colors.transparent,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Center(
-              child: Text(
-                "${date.day}",
-                style: TextStyle(
-                  color: isSelected ? Colors.blue : Colors.black,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  "${date.day}",
+                  style: TextStyle(
+                    color: isSelected ? Colors.blue : Colors.black,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  ),
                 ),
-              ),
+                if (wasteKg > 0)
+                  Text("${wasteKg} kg", style: const TextStyle(fontSize: 12, color: Colors.black54)),
+              ],
             ),
           ),
         );
@@ -174,6 +183,16 @@ class _GestionDechetsState extends State<GestionDechets> {
   }
 
   Widget _buildQuantityInput() {
+    // Vérifie si une date est sélectionnée et récupère la quantité correspondante
+    int currentQuantity = 0;
+    if (selectedDate != null) {
+      String dateKey = "${selectedDate!.year}-${selectedDate!.month}-${selectedDate!.day}";
+      currentQuantity = wasteRecords[dateKey] ?? 0;
+    }
+
+    // Met à jour le controller avec la quantité du jour sélectionné
+    quantityController.text = currentQuantity.toString();
+
     return Row(
       children: [
         Expanded(
