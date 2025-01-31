@@ -132,7 +132,7 @@ class _ConnexionState extends State<Connexion> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                if (screenWidth > 900)
+                if (screenWidth > 952)
                   Padding(
                     padding: const EdgeInsets.only(right: 20),
                     child: Image.asset(

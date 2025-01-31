@@ -10,7 +10,7 @@ import 'connexion/connexion.dart';
 
 class HomePageScreen extends StatefulWidget {
   final int initialIndex;
-  const HomePageScreen({Key? key, this.initialIndex = 0}) : super(key: key);
+  const HomePageScreen({Key? key, this.initialIndex = 1}) : super(key: key);
 
   @override
   createState() => _HomePageScreenState();
@@ -28,7 +28,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
   // Page login ajoutée au début de la liste (index 0)
   final List<Widget> _children = <Widget>[
     Connexion(),
-    Page1(),
+    GestionDechets(),
     Page2(),
     ChatPage(),
   ];
