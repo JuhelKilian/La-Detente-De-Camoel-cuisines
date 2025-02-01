@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:la_detente_de_camoel_cuisines/utils/utilsCalendrier.dart';
 
 class GestionDechets extends StatefulWidget {
   const GestionDechets({super.key});
@@ -9,81 +10,59 @@ class GestionDechets extends StatefulWidget {
 }
 
 class _GestionDechetsState extends State<GestionDechets> {
-  late DateTime currentMonth;
-  late List<DateTime> datesGrid;
-  DateTime? selectedDate;
-  final TextEditingController quantityController = TextEditingController();
-  int totalWaste = 0;
-  Map<String, int> wasteRecords = {};
+  late DateTime moisActuel;
+  late List<DateTime> calendrierJours;
+  DateTime? dateSelectionnee;
+  final TextEditingController controleQuantite = TextEditingController();
+  int totalDechets = 0;
+  Map<String, int> enregistrementsDechets = {};
 
   @override
   void initState() {
     super.initState();
-    currentMonth = DateTime.now();
-    datesGrid = _generateDatesGrid(currentMonth);
-    _loadWasteData();
+    moisActuel = DateTime.now();
+    calendrierJours = genererCalendrier(moisActuel);
+    _chargerDonneesDechets();
   }
 
-  Future<void> _loadWasteData() async {
-    final prefs = await SharedPreferences.getInstance();
+  Future<void> _chargerDonneesDechets() async {
+    enregistrementsDechets = await chargerDonneesDechets();
     setState(() {
-      wasteRecords = Map<String, int>.from(
-          (prefs.getStringList('wasteRecords') ?? []).asMap().map((key, value) => MapEntry(value.split(':')[0], int.parse(value.split(':')[1]))));
-      totalWaste = wasteRecords.values.fold(0, (prev, element) => prev + element);
+      totalDechets = enregistrementsDechets.values.fold(0, (prev, element) => prev + element);
     });
   }
 
-  Future<void> _saveWasteData() async {
-    final prefs = await SharedPreferences.getInstance();
-    List<String> data = wasteRecords.entries.map((e) => "${e.key}:${e.value}").toList();
-    await prefs.setStringList('wasteRecords', data);
+  Future<void> _sauvegarderDonneesDechets() async {
+    await sauvegarderDonneesDechets(enregistrementsDechets);
   }
 
-  List<DateTime> _generateDatesGrid(DateTime month) {
-    int numDays = DateTime(month.year, month.month + 1, 0).day;
-    int firstWeekday = DateTime(month.year, month.month, 1).weekday % 7;
-    List<DateTime> dates = [];
-
-    for (int i = 0; i < firstWeekday; i++) {
-      dates.add(DateTime(month.year, month.month - 1, 28 - firstWeekday + i + 1));
-    }
-    for (int day = 1; day <= numDays; day++) {
-      dates.add(DateTime(month.year, month.month, day));
-    }
-    while (dates.length % 7 != 0) {
-      dates.add(DateTime(month.year, month.month + 1, dates.length - numDays + 1));
-    }
-
-    return dates;
-  }
-
-  void _changeMonth(int offset) {
+  void _changerMois(int decalage) {
     setState(() {
-      currentMonth = DateTime(currentMonth.year, currentMonth.month + offset);
-      datesGrid = _generateDatesGrid(currentMonth);
-      selectedDate = null;
+      moisActuel = DateTime(moisActuel.year, moisActuel.month + decalage);
+      calendrierJours = genererCalendrier(moisActuel);
+      dateSelectionnee = null;
     });
   }
 
-  void _validateQuantity() {
-    if (selectedDate == null) return;
+  void _validerQuantite() {
+    if (dateSelectionnee == null) return;
     setState(() {
-      String dateKey = "${selectedDate!.year}-${selectedDate!.month}-${selectedDate!.day}";
-      int newQuantity = int.tryParse(quantityController.text) ?? 0;
-      // Remplace la quantité existante par la nouvelle
-      wasteRecords[dateKey] = newQuantity;
-      totalWaste = wasteRecords.values.fold(0, (prev, element) => prev + element);
-      quantityController.clear();
+      String cleDate = "${dateSelectionnee!.year}-${dateSelectionnee!.month.toString().padLeft(2, '0')}-${dateSelectionnee!.day.toString().padLeft(2, '0')}";
+      int nouvelleQuantite = int.tryParse(controleQuantite.text) ?? 0;
+      enregistrementsDechets[cleDate] = nouvelleQuantite;
+      totalDechets = enregistrementsDechets.values.fold(0, (prev, element) => prev + element);
+      controleQuantite.clear();
     });
-    _saveWasteData();
+    _sauvegarderDonneesDechets();
   }
-
 
   @override
   Widget build(BuildContext context) {
+    int dechetsSemaine = calculerDechetsSemaine(enregistrementsDechets);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Repertorier les déchets"),
+        title: const Text("Répertorier les déchets"),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
@@ -93,11 +72,11 @@ class _GestionDechetsState extends State<GestionDechets> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            _buildHeader(),
-            _buildWeekdayHeader(),
-            Expanded(child: _buildCalendarGrid()),
-            _buildQuantityInput(),
-            Text("$totalWaste Kilos ont été jeté cette semaine",
+            _construireEnTete(),
+            _construireEnTeteJours(),
+            Expanded(child: _construireCalendrier()),
+            _construireSaisieQuantite(),
+            Text("$dechetsSemaine Kilos ont été jetés cette semaine",
                 style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             TextButton(
@@ -110,56 +89,65 @@ class _GestionDechetsState extends State<GestionDechets> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _construireEnTete() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         IconButton(
-          icon: const Icon(Icons.chevron_left),
-          onPressed: () => _changeMonth(-1),
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => _changerMois(-1),
         ),
-        Text("${_monthName(currentMonth.month)} ${currentMonth.year}",
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        Text(
+          "${moisActuel.month}/${moisActuel.year}",
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
         IconButton(
-          icon: const Icon(Icons.chevron_right),
-          onPressed: () => _changeMonth(1),
+          icon: const Icon(Icons.arrow_forward),
+          onPressed: () => _changerMois(1),
         ),
       ],
     );
   }
 
-  Widget _buildWeekdayHeader() {
-    const weekdays = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
+  Widget _construireEnTeteJours() {
+    List<String> joursSemaine = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: weekdays.map((day) => Text(day, style: const TextStyle(fontWeight: FontWeight.w600))).toList(),
+      children: joursSemaine.map((jour) => Text(jour, style: const TextStyle(fontWeight: FontWeight.bold))).toList(),
     );
   }
 
-  Widget _buildCalendarGrid() {
+  Widget _construireCalendrier() {
     return GridView.builder(
       shrinkWrap: true,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 7,
         childAspectRatio: 1,
       ),
-      itemCount: datesGrid.length,
+      itemCount: calendrierJours.length,
       itemBuilder: (context, index) {
-        DateTime date = datesGrid[index];
-        bool isSelected = selectedDate != null && date.isAtSameMomentAs(selectedDate!);
-        String dateKey = "${date.year}-${date.month}-${date.day}";
-        int wasteKg = wasteRecords[dateKey] ?? 0;
+        DateTime date = calendrierJours[index];
+        bool estSelectionnee = dateSelectionnee != null && date.isAtSameMomentAs(dateSelectionnee!);
+        bool estMoisActuel = date.month == moisActuel.month;
+        String cleDate = "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+        int dechetsKg = enregistrementsDechets[cleDate] ?? 0;
+
+        DateTime now = DateTime.now();
+        DateTime oneMonthAgo = DateTime(now.year, now.month - 1, now.day);
+        bool estDateValide = date.isBefore(now) && date.isAfter(oneMonthAgo);
 
         return GestureDetector(
           onTap: () {
-            setState(() {
-              selectedDate = date;
-            });
+            if (estMoisActuel && estDateValide) {
+              setState(() {
+                dateSelectionnee = date;
+              });
+            }
           },
           child: Container(
             margin: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: isSelected ? Colors.blue.shade100 : Colors.transparent,
+              color: estSelectionnee ? Colors.blue.shade100 : Colors.transparent,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
@@ -168,12 +156,12 @@ class _GestionDechetsState extends State<GestionDechets> {
                 Text(
                   "${date.day}",
                   style: TextStyle(
-                    color: isSelected ? Colors.blue : Colors.black,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    color: estMoisActuel ? (estSelectionnee ? Colors.blue : Colors.black) : Colors.grey,
+                    fontWeight: estSelectionnee ? FontWeight.bold : FontWeight.normal,
                   ),
                 ),
-                if (wasteKg > 0)
-                  Text("${wasteKg} kg", style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                if (dechetsKg > 0)
+                  Text("${dechetsKg} kg", style: const TextStyle(fontSize: 12, color: Colors.black54)),
               ],
             ),
           ),
@@ -182,22 +170,20 @@ class _GestionDechetsState extends State<GestionDechets> {
     );
   }
 
-  Widget _buildQuantityInput() {
-    // Vérifie si une date est sélectionnée et récupère la quantité correspondante
-    int currentQuantity = 0;
-    if (selectedDate != null) {
-      String dateKey = "${selectedDate!.year}-${selectedDate!.month}-${selectedDate!.day}";
-      currentQuantity = wasteRecords[dateKey] ?? 0;
+  Widget _construireSaisieQuantite() {
+    int quantiteActuelle = 0;
+    if (dateSelectionnee != null) {
+      String cleDate = "${dateSelectionnee!.year}-${dateSelectionnee!.month.toString().padLeft(2, '0')}-${dateSelectionnee!.day.toString().padLeft(2, '0')}";
+      quantiteActuelle = enregistrementsDechets[cleDate] ?? 0;
     }
 
-    // Met à jour le controller avec la quantité du jour sélectionné
-    quantityController.text = currentQuantity.toString();
+    controleQuantite.text = quantiteActuelle.toString();
 
     return Row(
       children: [
         Expanded(
           child: TextField(
-            controller: quantityController,
+            controller: controleQuantite,
             keyboardType: TextInputType.number,
             decoration: const InputDecoration(
               labelText: "Quantité (en kg)",
@@ -207,14 +193,10 @@ class _GestionDechetsState extends State<GestionDechets> {
         ),
         const SizedBox(width: 8),
         ElevatedButton(
-          onPressed: _validateQuantity,
+          onPressed: _validerQuantite,
           child: const Text("Valider"),
         ),
       ],
     );
-  }
-
-  String _monthName(int month) {
-    return ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'][month - 1];
   }
 }
