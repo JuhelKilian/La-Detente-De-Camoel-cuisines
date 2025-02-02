@@ -192,6 +192,8 @@ class _GestionDechetsState extends State<GestionDechets> {
             if (estMoisActuel && estDansLeMoisPrecedent && estValide) {
               setState(() {
                 dateSelectionnee = date;
+                String cleDate = "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+                controleQuantite.text = enregistrementsDechets[cleDate]?.toString() ?? '';
               });
             }
           },
@@ -237,7 +239,7 @@ class _GestionDechetsState extends State<GestionDechets> {
           Expanded(
             child: TextField(
               controller: controleQuantite,
-              keyboardType: TextInputType.number,
+              keyboardType: TextInputType.numberWithOptions(decimal: true),  // Permet les décimales
               decoration: InputDecoration(
                 labelText: "Quantité (kg)",
                 filled: true,
@@ -248,6 +250,7 @@ class _GestionDechetsState extends State<GestionDechets> {
                 ),
               ),
             ),
+
           ),
           const SizedBox(width: 12),
           ElevatedButton(
