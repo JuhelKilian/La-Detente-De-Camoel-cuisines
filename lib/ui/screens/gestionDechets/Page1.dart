@@ -74,12 +74,14 @@ class _GestionDechetsState extends State<GestionDechets> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Répertorier les déchets"),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+        title: const Text(
+          "Répertorier les déchets",
+          style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
         ),
+        backgroundColor: Colors.blue[900],
+        elevation: 4,
       ),
+
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -87,20 +89,38 @@ class _GestionDechetsState extends State<GestionDechets> {
             _construireEnTete(),
             _construireEnTeteJours(),
             Expanded(child: _construireCalendrier()),
+            SizedBox(height: 8),
             _construireSaisieQuantite(),
-            Text("$dechetsSemaine Kilos ont été jetés cette semaine",
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
-            TextButton(
-                onPressed: () {
-                  // Navigation vers la page des statistiques
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const StatistiquesPage()),
-                  );
-                },
-                child: const Text("Voir les statistiques", style: TextStyle(color: Colors.blue))
+            SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,  // Pour espacer le texte et le bouton
+              children: [
+                Text(
+                  "$dechetsSemaine Kilos ont été jetés cette semaine",  // Le texte
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    // Navigation vers la page des statistiques
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const StatistiquesPage()),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueAccent,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),  // Plus de padding pour agrandir le bouton
+                  ),
+                  child: const Text(
+                    "Voir les statistiques",  // Le texte du bouton
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),  // Taille de police plus grande
+                  ),
+                ),
+              ],
             ),
+
           ],
         ),
       ),
@@ -136,6 +156,9 @@ class _GestionDechetsState extends State<GestionDechets> {
   }
 
   Widget _construireCalendrier() {
+    DateTime aujourdHui = DateTime.now(); // Date actuelle
+    DateTime debutMoisPrecedent = DateTime(aujourdHui.year, aujourdHui.month - 1, 1); // Premier jour du mois précédent
+
     return GridView.builder(
       shrinkWrap: true,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -145,18 +168,28 @@ class _GestionDechetsState extends State<GestionDechets> {
       itemCount: calendrierJours.length,
       itemBuilder: (context, index) {
         DateTime date = calendrierJours[index];
+
+        // Vérification si la date est dans la plage valide (du mois dernier jusqu'à aujourd'hui)
+        bool estValide = date.isBefore(aujourdHui) || date.isAtSameMomentAs(aujourdHui);
+        bool estDansLeMoisPrecedent = date.isAfter(debutMoisPrecedent);
         bool estSelectionnee = dateSelectionnee != null && date.isAtSameMomentAs(dateSelectionnee!);
         bool estMoisActuel = date.month == moisActuel.month;
         String cleDate = "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
         int dechetsKg = enregistrementsDechets[cleDate] ?? 0;
 
-        DateTime now = DateTime.now();
-        DateTime oneMonthAgo = DateTime(now.year, now.month - 1, now.day);
-        bool estDateValide = date.isBefore(now) && date.isAfter(oneMonthAgo);
+        // Désactiver la date si elle est hors de la plage valide (moins que le mois dernier ou plus tard qu'aujourd'hui)
+        Color bgColor = estSelectionnee
+            ? Colors.blueAccent
+            : (estMoisActuel && estDansLeMoisPrecedent && estValide
+            ? Colors.white
+            : Colors.grey[200]!);
+        Color textColor = estSelectionnee
+            ? Colors.white
+            : (estMoisActuel && estDansLeMoisPrecedent && estValide ? Colors.black : Colors.grey);
 
         return GestureDetector(
           onTap: () {
-            if (estMoisActuel && estDateValide) {
+            if (estMoisActuel && estDansLeMoisPrecedent && estValide) {
               setState(() {
                 dateSelectionnee = date;
               });
@@ -165,21 +198,22 @@ class _GestionDechetsState extends State<GestionDechets> {
           child: Container(
             margin: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: estSelectionnee ? Colors.blue.shade100 : Colors.transparent,
+              color: bgColor,
               borderRadius: BorderRadius.circular(8),
+              boxShadow: estSelectionnee
+                  ? [BoxShadow(color: Colors.blueAccent.withOpacity(0.5), blurRadius: 8)]
+                  : [],
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(
-                  "${date.day}",
-                  style: TextStyle(
-                    color: estMoisActuel ? (estSelectionnee ? Colors.blue : Colors.black) : Colors.grey,
-                    fontWeight: estSelectionnee ? FontWeight.bold : FontWeight.normal,
-                  ),
-                ),
+                Text("${date.day}", style: TextStyle(color: textColor, fontWeight: FontWeight.bold)),
                 if (dechetsKg > 0)
-                  Text("${dechetsKg} kg", style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                  Container(
+                    margin: const EdgeInsets.only(top: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    child: Text("$dechetsKg kg", style: const TextStyle(fontSize: 12, color: Colors.black)),
+                  ),
               ],
             ),
           ),
@@ -188,33 +222,47 @@ class _GestionDechetsState extends State<GestionDechets> {
     );
   }
 
+
+
   Widget _construireSaisieQuantite() {
-    int quantiteActuelle = 0;
-    if (dateSelectionnee != null) {
-      String cleDate = "${dateSelectionnee!.year}-${dateSelectionnee!.month.toString().padLeft(2, '0')}-${dateSelectionnee!.day.toString().padLeft(2, '0')}";
-      quantiteActuelle = enregistrementsDechets[cleDate] ?? 0;
-    }
-
-    controleQuantite.text = quantiteActuelle.toString();
-
-    return Row(
-      children: [
-        Expanded(
-          child: TextField(
-            controller: controleQuantite,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              labelText: "Quantité (en kg)",
-              border: OutlineInputBorder(),
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.2), blurRadius: 8)],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: controleQuantite,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: "Quantité (kg)",
+                filled: true,
+                fillColor: Colors.grey[100],
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+              ),
             ),
           ),
-        ),
-        const SizedBox(width: 8),
-        ElevatedButton(
-          onPressed: _validerQuantite,
-          child: const Text("Valider"),
-        ),
-      ],
+          const SizedBox(width: 12),
+          ElevatedButton(
+            onPressed: _validerQuantite,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blueAccent,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+            ),
+            child: const Text("Valider", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
     );
   }
+
 }
