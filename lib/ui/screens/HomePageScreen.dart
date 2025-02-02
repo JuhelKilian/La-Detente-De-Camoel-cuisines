@@ -1,9 +1,9 @@
 import 'package:la_detente_de_camoel_cuisines/ui/screens/connexion/connexion.dart';
 import 'package:flutter/material.dart';
 
-import './home/Page1.dart';
+import 'gestionDechets/Page1.dart';
 import './home/Page2.dart';
-import './home/Chat.dart';
+import 'messages/Chat.dart';
 
 // Connexion
 import 'connexion/connexion.dart';

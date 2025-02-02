@@ -26,7 +26,7 @@ class _GestionDechetsState extends State<GestionDechets> {
   }
 
   Future<void> _chargerDonneesDechets() async {
-    enregistrementsDechets = await chargerDonneesDechets();
+    enregistrementsDechets = await chargerDonneesDechets(moisActuel.year, moisActuel.month);
     setState(() {
       totalDechets = enregistrementsDechets.values.fold(0, (prev, element) => prev + element);
     });
@@ -42,19 +42,26 @@ class _GestionDechetsState extends State<GestionDechets> {
       calendrierJours = genererCalendrier(moisActuel);
       dateSelectionnee = null;
     });
+    _chargerDonneesDechets();
   }
+
 
   void _validerQuantite() {
     if (dateSelectionnee == null) return;
+
     setState(() {
       String cleDate = "${dateSelectionnee!.year}-${dateSelectionnee!.month.toString().padLeft(2, '0')}-${dateSelectionnee!.day.toString().padLeft(2, '0')}";
       int nouvelleQuantite = int.tryParse(controleQuantite.text) ?? 0;
+
       enregistrementsDechets[cleDate] = nouvelleQuantite;
       totalDechets = enregistrementsDechets.values.fold(0, (prev, element) => prev + element);
       controleQuantite.clear();
     });
+
     _sauvegarderDonneesDechets();
+    envoyerQuantiteDechets(dateSelectionnee!.toIso8601String().split("T")[0], enregistrementsDechets[dateSelectionnee!.toIso8601String().split("T")[0]] ?? 0);
   }
+
 
   @override
   Widget build(BuildContext context) {
