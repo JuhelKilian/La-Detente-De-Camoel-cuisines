@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:la_detente_de_camoel_cuisines/ui/screens/gestionDechets/pageStatistiques.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:la_detente_de_camoel_cuisines/utils/utilsCalendrier.dart';
 
@@ -91,7 +92,13 @@ class _GestionDechetsState extends State<GestionDechets> {
                 style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             TextButton(
-                onPressed: () {},
+                onPressed: () {
+                  // Navigation vers la page des statistiques
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const StatistiquesPage()),
+                  );
+                },
                 child: const Text("Voir les statistiques", style: TextStyle(color: Colors.blue))
             ),
           ],
