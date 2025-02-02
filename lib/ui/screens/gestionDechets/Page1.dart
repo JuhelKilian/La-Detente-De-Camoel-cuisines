@@ -33,8 +33,12 @@ class _GestionDechetsState extends State<GestionDechets> {
   }
 
   Future<void> _sauvegarderDonneesDechets() async {
-    await sauvegarderDonneesDechets(enregistrementsDechets);
+    final prefs = await SharedPreferences.getInstance();
+    String cacheKey = 'dechets_${moisActuel.year}_${moisActuel.month}'; // Clé unique pour chaque mois
+    List<String> donnees = enregistrementsDechets.entries.map((e) => "${e.key}:${e.value}").toList();
+    await prefs.setStringList(cacheKey, donnees);
   }
+
 
   void _changerMois(int decalage) {
     setState(() {
