@@ -18,6 +18,66 @@ class _Page2State extends State<Page2> {
     _commandesFuture = ApiService.getCommandes();
   }
 
+  Future<void> _updatePlatState(int idInstance, String currentState) async {
+    final Map<String, int> states = {
+      'A FAIRE': 1,
+      'EN PRÉPARATION': 2,
+      'TERMINÉ': 3,
+    };
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Changer l\'état'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const Text('A faire'),
+              onTap: () async {
+                await _processStateChange(idInstance, 1);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              title: const Text('En préparation'),
+              onTap: () async {
+                await _processStateChange(idInstance, 2);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              title: const Text('Terminé'),
+              onTap: () async {
+                await _processStateChange(idInstance, 3);
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _processStateChange(int idInstance, int newStateId) async {
+    try {
+      final success = await ApiService.updatePlatState(idInstance, newStateId);
+      if (success) {
+        setState(() {
+          _commandesFuture = ApiService.getCommandes();
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Échec de la mise à jour')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -57,9 +117,15 @@ class _Page2State extends State<Page2> {
                           ),
                           title: Text(plat.plat.libellePlat),
                           subtitle: Text(plat.plat.typeplat.typePlat),
-                          trailing: Chip(
-                            label: Text(plat.etatplat.libelleEtat),
-                            backgroundColor: _getStatusColor(plat.etatplat.libelleEtat).withOpacity(0.2),
+                          trailing: GestureDetector(
+                            onTap: () => _updatePlatState(
+                              plat.idInstance,
+                              plat.etatplat.libelleEtat,
+                            ),
+                            child: Chip(
+                              label: Text(plat.etatplat.libelleEtat),
+                              backgroundColor: _getStatusColor(plat.etatplat.libelleEtat).withOpacity(0.2),
+                            ),
                           ),
                         ))
                   ],
