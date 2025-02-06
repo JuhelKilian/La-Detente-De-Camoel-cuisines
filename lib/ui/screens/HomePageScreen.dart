@@ -53,12 +53,12 @@ class _HomePageScreenState extends State<HomePageScreen> {
               currentIndex: _currentIndex - 1,
               items: const <BottomNavigationBarItem>[
                 BottomNavigationBarItem(
-                  icon: Icon(Icons.qr_code),
-                  label: 'Scan QR',
+                  icon: Icon(Icons.shopping_bag),
+                  label: 'Gestion déchets',
                 ),
                 BottomNavigationBarItem(
-                  icon: Icon(Icons.add_shopping_cart),
-                  label: 'Commander',
+                  icon: Icon(Icons.list_alt),
+                  label: 'Commandes',
                 ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.chat),
