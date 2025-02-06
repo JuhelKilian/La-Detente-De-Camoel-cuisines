@@ -10,7 +10,7 @@ import 'connexion/connexion.dart';
 
 class HomePageScreen extends StatefulWidget {
   final int initialIndex;
-  const HomePageScreen({Key? key, this.initialIndex = 1}) : super(key: key);
+  const HomePageScreen({Key? key, this.initialIndex = 0}) : super(key: key);
 
   @override
   createState() => _HomePageScreenState();
