@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
+
 import 'package:la_detente_de_camoel_cuisines/theme.dart';
 import 'package:la_detente_de_camoel_cuisines/ui/screens/HomePageScreen.dart';
 
-void main() {
+void main() async {
+  await initializeDateFormatting('fr_FR', null);
   runApp(const MyApp());
 }
 
